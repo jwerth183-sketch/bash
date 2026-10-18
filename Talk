@@ -1,29 +1,43 @@
 #!/bin/bash
 set -u
 
-# Berechtigungen für Hintergrund-Start (z.B. für Shortcuts in Cinnamon/Mint/GNOME)
+# Berechtigungen für Hintergrund-Start (Cinnamon/Mint/GNOME)
 export DISPLAY=:0
 export XDG_RUNTIME_DIR=/run/user/$(id -u)
 export DBUS_SESSION_BUS_ADDRESS="unix:path=/run/user/$(id -u)/bus"
 export XAUTHORITY=$HOME/.Xauthority
 
-# Hier den eigenen Groq API-Key eintragen
+# Hier deinen API-Key eintragen!
 API_KEY="DEIN_API_KEY_HIER"
+    
+LOCKFILE="/tmp/voice_dictation.lock"
+
+# 1. Schalter-Funktion: Bricht laufende Aufnahme bei 2. Tastendruck sofort ab
+if [ -f "$LOCKFILE" ]; then
+    REC_PID=$(cat "$LOCKFILE")
+    if kill -0 "$REC_PID" 2>/dev/null; then
+        kill "$REC_PID"
+        exit 0
+    fi
+fi
 
 if [ -z "$API_KEY" ] || [ "$API_KEY" = "DEIN_API_KEY_HIER" ]; then
-    # Signalton FEHLER (tiefer Ton)
     play -q -n synth 0.3 sine 200 vol 0.3 >/dev/null 2>&1
     exit 1
 fi
 
 AUDIO=$(mktemp /tmp/diktat.XXXXXX.wav)
-trap 'rm -f "$AUDIO"' EXIT
+trap 'rm -f "$AUDIO" "$LOCKFILE"' EXIT
 
-# Signalton START (kurzer Piep)
 play -q -n synth 0.1 sine 800 vol 0.3 >/dev/null 2>&1
 
-# max. 60 Sekunden Aufnahme, Rauschtoleranz auf 10% eingestellt
-rec -q -c 1 -r 16000 "$AUDIO" silence 1 0.1 10% 1 2.0 10% trim 0 60
+# 2. Aufnahme startet: Stoppt bei 1.5 Sek. Stille
+rec -q -c 1 -r 16000 "$AUDIO" silence 1 0.1 10% 1 1.5 10% trim 0 60 &
+REC_PID=$!
+echo "$REC_PID" > "$LOCKFILE"
+
+wait "$REC_PID" 2>/dev/null
+rm -f "$LOCKFILE"
 
 if [ ! -s "$AUDIO" ]; then
     exit 1
@@ -39,21 +53,24 @@ RESPONSE=$(curl -s --max-time 30 -X POST \
 TEXT=$(printf '%s' "$RESPONSE" | jq -r '.text // empty' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
 if [ -z "$TEXT" ]; then
-    # Signalton FEHLER (tiefer Ton)
     play -q -n synth 0.3 sine 200 vol 0.3 >/dev/null 2>&1
     exit 1
 fi
 
-# Reparatur für die Zwischenablage (Wayland/X11 Check)
+# Reparatur für die Zwischenablage und Auto-Einfügen
 if [ "${XDG_SESSION_TYPE:-}" = "wayland" ] && command -v wl-copy >/dev/null; then
     printf '%s' "$TEXT" | wl-copy
 elif command -v xclip >/dev/null; then
     printf '%s' "$TEXT" | xclip -selection clipboard
+    
+    # Automatisches Einfügen via xdotool
+    sleep 0.1
+    if command -v xdotool >/dev/null; then
+        xdotool key ctrl+v
+    fi
 else
-    # Signalton FEHLER falls kein Kopier-Tool gefunden wird
     play -q -n synth 0.3 sine 200 vol 0.3 >/dev/null 2>&1
     exit 1
 fi
 
-# Signalton FERTIG (etwas höherer, doppelter Piep)
 play -q -n synth 0.1 sine 1000 synth 0.1 sine 1200 vol 0.3 >/dev/null 2>&1
