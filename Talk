@@ -16,7 +16,7 @@ LOCKFILE="/tmp/voice_dictation.lock"
 if [ -f "$LOCKFILE" ]; then
     REC_PID=$(cat "$LOCKFILE")
     if kill -0 "$REC_PID" 2>/dev/null; then
-        kill "$REC_PID"
+        kill -INT "$REC_PID"
         exit 0
     fi
 fi
