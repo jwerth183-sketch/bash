@@ -1,22 +1,20 @@
-# 🎙️ Linux Voice-to-Text Diktier-Skript
+# Linux Voice-to-Text Diktier-Skript
 
-Ein extrem schnelles, ressourcenschonendes und kostenloses Diktier-Skript für Linux. 
-Es nimmt deine Stimme auf, wandelt sie über die schnelle **Groq API (Whisper-large-v3-turbo)** in Text um und **tippt das Ergebnis vollautomatisch** in dein aktives Fenster.
+Ein Bash-Skript für Linux zur systemweiten Spracheingabe. Es nimmt gesprochenes Audio auf, transkribiert es über die Groq-API (Whisper-large-v3-turbo) und fügt den generierten Text automatisch in das aktuell fokussierte Fenster ein. 
 
-Perfekt optimiert für die Nutzung als **Tastenkürzel (Shortcut)** im Hintergrund, speziell unter Desktop-Umgebungen wie Cinnamon, Mint oder GNOME.
+Das Skript ist für die Ausführung über eine systemweite Tastenkombination im Hintergrund konzipiert (z. B. unter Cinnamon, Linux Mint oder GNOME).
 
-## ✨ Features
-* **Rasend schnell:** Nutzt die Groq API für fast verzögerungsfreie Transkription.
-* **Auto-Typing:** Fügt den erkannten Text wie von Geisterhand selbst in dein Dokument ein (via `xdotool`).
-* **Toggle-Modus (Schalter):** Drücke dein Tastenkürzel, um die Aufnahme zu starten. Drücke es erneut, um sie sofort zu beenden und den Text zu generieren.
-* **Smartes Zuhören:** Falls du den zweiten Tastendruck vergisst, stoppt die Aufnahme automatisch nach 1,5 Sekunden Stille.
-* **Audio-Feedback:** Nutzt kurze, unaufdringliche **Signaltöne** (Start, Erfolg, Fehler), da Linux-Desktops visuelle Popups bei Hintergrund-Shortcuts oft blockieren.
-* **Universell:** Unterstützt sowohl **X11** (`xclip`) als auch **Wayland** (`wl-copy`).
+## Funktionen
+- **Transkription:** Nutzt die Groq-API für eine zügige Textgenerierung.
+- **Automatisches Einfügen:** Übergibt den erkannten Text über `xdotool` an die aktive Anwendung.
+- **Toggle-Steuerung:** Die Audioaufnahme lässt sich über denselben Tastendruck starten und wieder manuell beenden.
+- **Silence Detection:** Alternativ stoppt die Aufnahme automatisch, sobald für 1,5 Sekunden Stille erkannt wird.
+- **Akustisches Feedback:** Verwendet kurze Signaltöne zur Statusrückmeldung (Start, Erfolg, Fehler), da visuelle Benachrichtigungen bei Hintergrundskripten oft von der Desktop-Umgebung blockiert werden.
+- **Zwischenablage:** Kompatibel mit X11 (`xclip`) und grundlegend mit Wayland (`wl-copy`).
 
-## 🛠️ Installation & Voraussetzungen
+## Voraussetzungen
 
-Damit das Skript Audios aufnehmen, Tastendrücke simulieren und die Zwischenablage nutzen kann, müssen ein paar kleine Linux-Pakete installiert werden.
+Für die Audioaufnahme, das Auslesen der Zwischenablage und die Simulation der Tastendrücke werden folgende Kommandozeilenwerkzeuge benötigt. Unter Debian/Ubuntu-basierten Systemen lassen sich diese über das Terminal installieren:
 
-Öffne dein Terminal und führe diesen Befehl aus:
 ```bash
 sudo apt update && sudo apt install -y sox libsox-fmt-all curl jq wl-clipboard xclip xdotool
